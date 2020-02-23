@@ -2,6 +2,13 @@ from flask import Flask, request
 from tas import queryTas, tas
 from companies import getCompanyWithName
 from insertFriends import insertUser, insertConversation, insertEpisode
+from getFriends import (
+    getUsers,
+    getUserConversation,
+    getUserSentiment,
+    getAllConver,
+    getAllSentiment,
+)
 import random
 
 app = Flask(__name__)
@@ -12,7 +19,7 @@ app = Flask(__name__)
 
 @app.route("/")
 def hello():
-    hello = "Bienvenido a la API de Análisis de Sentimientos. Juega con Friends y descubre su personalidad"
+    hello = "Bienvenido a la API de Análisis de Sentimientos. Juega con FRIENDS y descubre su personalidad"
     return hello
 
 
@@ -68,12 +75,36 @@ def insertConverEpisode(episode_number):
     return insertEpisode(episode_number)
 
 
-####### GET #######
+####### GET ####### getUsers, getUserConversation, getUserSentiment, getAllConver, getAllSentiment
 
-"""
+# Get all users registrados
+@app.route("/get/users")
+def getAllUsers():
+    return getUsers()
+
+
+# Get one user conversation
 @app.route("/get/conver/user/<name>")
-def getConver(name):
-    return getConversation(name)
-"""
+def getConversationUser(name):
+    return getUserConversation(name)
+
+
+# Get one user sentiments
+@app.route("/get/sentiment/user/<name>")
+def getSentimentUser(name):
+    return getUserSentiment(name)
+
+
+# Get all users conversations
+@app.route("/get/conversations")
+def getConverAll():
+    return getAllConver()
+
+
+# Get all users sentiments
+@app.route("/get/sentiments")
+def getSentimentAll():
+    return getAllSentiment()
+
 
 app.run("0.0.0.0", 5000, debug=True)
