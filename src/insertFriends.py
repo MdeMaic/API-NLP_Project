@@ -2,13 +2,11 @@ from pymongo import MongoClient
 from errorHandler import jsonErrorHandler
 from doubleCheck import findIdMax, checkName, checkEpisode
 from bson.json_util import dumps
-import re
 import pandas as pd
 
 # Connect to the database
 client = MongoClient("mongodb://localhost/friends")
-
-# PARA CONECTAR A MONGODB ATLAS METER API KEY
+######### PARA CONECTAR A MONGODB ATLAS METER API KEY
 
 # Asignar variables a las colecciones para evitar que se reinicien en cada función.
 db = client.get_database()
@@ -16,10 +14,11 @@ coll_users = db["users"]
 coll_conver = db["conversations"]
 
 
-# Para insertar un usuario en la colección users. @app.route("/insert/user/<name>")
 @jsonErrorHandler
 def insertUser(name):
-
+    """
+    Para insertar un usuario en la colección users. @app.route("/insert/user/<name>")
+    """
     name = name.capitalize()
     chk_name = checkName(name, "user")
     if chk_name == "OK":
@@ -34,33 +33,11 @@ def insertUser(name):
         return chk_name
 
 
-# Para insertar quotes de los personajes de Star Wars. @app.route("/insert/conver/user/<name>")
-@jsonErrorHandler
-def insertConversation(name):
-
-    name = name.capitalize()
-    chk_name = checkName(name, "conversation")
-
-    if chk_name == "OK":
-
-        df = pd.read_csv("../input/starwars.csv", index_col=0)
-        df = df[df.user_name == name]
-        df_dict = df.to_dict(orient="records")
-
-        query = coll_conver.insert_many(df_dict)
-
-        if not query:
-            raise ValueError("Can't insert conversation")
-        return f"Conversación añadida al usuario {name}"
-    else:
-        # raise NameError(chk_name)
-        return chk_name
-
-
-# Para insertar episodios y conversaciones de Friends. @app.route("/insert/conver/episode/<episode_number>")
 @jsonErrorHandler
 def insertEpisode(chapter):
-
+    """
+    Para insertar episodios y conversaciones de Friends. @app.route("/insert/conver/episode/<episode_number>")
+    """
     chapter = int(chapter)
     if type(chapter) != int:
         raise ValueError("Debes introducir un numero de episodio")
@@ -91,8 +68,25 @@ def insertEpisode(chapter):
         return f"El episodio {chapter} ya estaba insertado en la base de datos."
 
 
-"""
-TERMINAR!
-def insertOneConversation(name):
-"""
+@jsonErrorHandler
+def insertConversation(name):
+    """
+    Para insertar quotes de los personajes de Star Wars. @app.route("/insert/conver/user/<name>")
+    """
+    name = name.capitalize()
+    chk_name = checkName(name, "conversation")
 
+    if chk_name == "OK":
+
+        df = pd.read_csv("../input/starwars.csv", index_col=0)
+        df = df[df.user_name == name]
+        df_dict = df.to_dict(orient="records")
+
+        query = coll_conver.insert_many(df_dict)
+
+        if not query:
+            raise ValueError("Can't insert conversation")
+        return f"Conversación añadida al usuario {name}"
+    else:
+        # raise NameError(chk_name)
+        return chk_name

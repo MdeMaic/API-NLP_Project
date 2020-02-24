@@ -18,6 +18,10 @@ coll_conver = db["conversations"]
 
 
 def findIdMax(tipo):
+    """
+    Encuentra el ID máximo para no duplicar iDs. 
+    Se usa para añadir el maxID+1 al siguiente documento.
+    """
     if tipo == "user":
         collect = coll_users
         q = {"user_id": {"$exists": True}}
@@ -35,6 +39,10 @@ def findIdMax(tipo):
 
 
 def checkName(name, tipo="user"):
+    """
+    Hace check del nombre en función de si es la colección "user" o "conversacion".
+    Se usa para evitar inconsistencias insertando usuarios que ya están.
+    """
     q = {"user_name": {"$exists": True}}
     query = coll_users.find(q, projection={"user_name": 1, "_id": 0})
     findname = [name for i in query for name in i.values()]
@@ -52,6 +60,10 @@ def checkName(name, tipo="user"):
 
 
 def checkEpisode():
+    """
+    Hace check del episodio y devuelve una lista de los episodios insertados. 
+    Se usa para asegurar que no se incluyen en la bbdd epiosdios repetidos.
+    """
     q = {"episode_number": {"$exists": True}}
     query = coll_conver.find(q, projection={"episode_number": 1, "_id": 0})
     findepisode = list(set([episode for i in query for episode in i.values()]))
@@ -59,6 +71,10 @@ def checkEpisode():
 
 
 def getMySentMatrix():
+    """
+    Devuelve la matriz de sentimientos de los usuarios registrados. 
+    Útil para analizar sentimientos y realizar recomendaciones.
+    """
     q = {}
     query_quote = coll_conver.find(q, projection={"_id": 0, "quote": 1})
     query_user = coll_conver.find(q, projection={"_id": 0, "user_name": 1})

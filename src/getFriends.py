@@ -24,9 +24,11 @@ coll_users = db["users"]
 coll_conver = db["conversations"]
 
 
-# Get todos los usuarios registrados --> API @app.route("/get/users")
 @jsonErrorHandler
 def getUsers():
+    """
+    Get todos los usuarios registrados --> API @app.route("/get/users")
+    """
     q = {}
     query = coll_users.find(q, projection={"_id": 0, "user_name": 1, "user_id": 1})
     if not query:
@@ -34,9 +36,11 @@ def getUsers():
     return dumps(query)
 
 
-# Get todas las conversaciones de un usuario --> API @app.route("/get/conver/user/<name>")
 @jsonErrorHandler
 def getUserConversation(name):
+    """
+    Get todas las conversaciones de un usuario --> API @app.route("/get/conver/user/<name>")
+    """
     name = name.capitalize()
     q = {"user_name": name}
     query = coll_conver.find(
@@ -54,9 +58,11 @@ def getUserConversation(name):
     return dumps(query)
 
 
-# get sentimientos de un usuario --> API @app.route("/get/sentiment/user/<name>")
 @jsonErrorHandler
 def getUserSentiment(name):
+    """
+    Get sentimientos de un usuario --> API @app.route("/get/sentiment/user/<name>")
+    """
     name = name.capitalize()
     q = {"user_name": name}
     query = coll_conver.find(q, projection={"_id": 0, "quote": 1})
@@ -84,9 +90,11 @@ def getUserSentiment(name):
     }
 
 
-# get sentimientos de todos los usuarios --> API @app.route("/get/conversations")
 @jsonErrorHandler
 def getAllConver():
+    """
+    Get conversaciones de todos los usuarios --> API @app.route("/get/conversations")
+    """
     q = {}
     query = coll_conver.find(
         q,
@@ -105,18 +113,22 @@ def getAllConver():
     return dumps(query)
 
 
-# get sentimientos de todos los usuarios --> API @app.route("/get/sentiments")
 @jsonErrorHandler
 def getAllSentiment():
+    """
+    Get sentimientos de todos los usuarios --> API @app.route("/get/sentiments")
+    """
     df = getMySentMatrix()
     df_json = df.to_json(orient="records")
 
     return df_json
 
 
-# get recommendation --> API @app.route("/get/recommendation/<name>")
 @jsonErrorHandler
 def getMyReco(name):
+    """
+    Get recommendation de un usuario frente al resto --> API @app.route("/get/recommendation/<name>")
+    """
     name = name.capitalize()
     df = getMySentMatrix()
 
