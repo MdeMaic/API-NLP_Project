@@ -10,6 +10,7 @@ Create a sentiment analyser API using as an example the American Friends tv-show
     - Route to insert users
     - Route to insert conversations
     - Route to insert episodes (with their plots)
+
 * GET API
     - Route to get all users
     - Route to get user conversation
@@ -18,10 +19,13 @@ Create a sentiment analyser API using as an example the American Friends tv-show
     - Route to get all users sentiment using NLP
     - Route to get friend recommendation
     - In progress | generate html with dashboards
+
 * DOCKER
     - Connect to docker and generate containers and images
+
 * MONGODB ATLAS
     - Connect to the Mongodb online server
+    
 * HEROKU
     - Run the application in the external server
 
