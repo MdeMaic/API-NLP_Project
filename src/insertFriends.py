@@ -16,9 +16,7 @@ coll_users = db["users"]
 coll_conver = db["conversations"]
 
 
-# Para insertar un usuario en la colección users.
-
-
+# Para insertar un usuario en la colección users. @app.route("/insert/user/<name>")
 @jsonErrorHandler
 def insertUser(name):
 
@@ -30,15 +28,13 @@ def insertUser(name):
         )
         if not query:
             raise ValueError("No se ha podido insertar el usuario")
-        return f"\n\n:)\nGenial!\n\nEl usuario {name} se ha ingresado correctamente"
+        return f"Perfecto! El usuario {name} se ha ingresado correctamente"
     else:
         # raise NameError(chk_name)
         return chk_name
 
 
-# Para insertar una quote distinta de la de los personajes de FRIENDS
-
-
+# Para insertar quotes de los personajes de Star Wars. @app.route("/insert/conver/user/<name>")
 @jsonErrorHandler
 def insertConversation(name):
 
@@ -46,13 +42,13 @@ def insertConversation(name):
     chk_name = checkName(name, "conversation")
 
     if chk_name == "OK":
-        query = coll_conver.insert_one(
-            {
-                "user_name": name,
-                "msg_id": findIdMax("conversation") + 1,
-                "quote": "Esto es una prueba de texto",  ####PREGUNTAR COMO HACER ESTO.
-            }
-        )
+
+        df = pd.read_csv("../input/starwars.csv", index_col=0)
+        df = df[df.user_name == name]
+        df_dict = df.to_dict(orient="records")
+
+        query = coll_conver.insert_many(df_dict)
+
         if not query:
             raise ValueError("Can't insert conversation")
         return f"Conversación añadida al usuario {name}"
@@ -61,19 +57,17 @@ def insertConversation(name):
         return chk_name
 
 
-# Para insertar episodios y conversaciones de Friends.
-
-
+# Para insertar episodios y conversaciones de Friends. @app.route("/insert/conver/episode/<episode_number>")
 @jsonErrorHandler
 def insertEpisode(chapter):
 
     chapter = int(chapter)
-    if type(chapter) != int:  #######PREGUNTAR!
+    if type(chapter) != int:
         raise ValueError("Debes introducir un numero de episodio")
 
     df = pd.read_csv("../input/friends_s1.csv", index_col=0)
 
-    # Check que están registrados los usuarios #######REVISAR
+    # Check que están registrados los usuarios
     user_names = list(set(df.user_name))
     for name in user_names:
         if checkName(name, "conversation") != "OK":
@@ -92,7 +86,13 @@ def insertEpisode(chapter):
         query = coll_conver.insert_many(df_dict)
         if not query:
             raise ValueError("No se puede añadir el episodio")
-        return f"Conversación del episodio {chapter} correctamente añadida"
+        return f"Conversación del episodio {chapter} añadida correctamente"
     else:
         return f"El episodio {chapter} ya estaba insertado en la base de datos."
+
+
+"""
+TERMINAR!
+def insertOneConversation(name):
+"""
 

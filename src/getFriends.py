@@ -1,11 +1,12 @@
 from pymongo import MongoClient
 from errorHandler import jsonErrorHandler
-from doubleCheck import findIdMax, checkName, checkEpisode
+from doubleCheck import findIdMax, checkName, checkEpisode, getMySentMatrix
 from bson.json_util import dumps
 import pandas as pd
 import re
 import nltk
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
+from scipy.spatial.distance import pdist, squareform
 
 # nltk model form
 nltk.download("punkt")
@@ -23,7 +24,7 @@ coll_users = db["users"]
 coll_conver = db["conversations"]
 
 
-# Get todos los usuarios registrados --> API
+# Get todos los usuarios registrados --> API @app.route("/get/users")
 @jsonErrorHandler
 def getUsers():
     q = {}
@@ -33,7 +34,7 @@ def getUsers():
     return dumps(query)
 
 
-# Get todas las conversaciones de un usuario --> API
+# Get todas las conversaciones de un usuario --> API @app.route("/get/conver/user/<name>")
 @jsonErrorHandler
 def getUserConversation(name):
     name = name.capitalize()
@@ -53,7 +54,7 @@ def getUserConversation(name):
     return dumps(query)
 
 
-# get sentimientos de un usuario --> API
+# get sentimientos de un usuario --> API @app.route("/get/sentiment/user/<name>")
 @jsonErrorHandler
 def getUserSentiment(name):
     name = name.capitalize()
@@ -71,20 +72,19 @@ def getUserSentiment(name):
             df[count] = sent.values()
             count += 1
     df = df.T
-    lg, cl = df.shape
-    negative = df.neg.sum() / lg
-    neutral = df.neu.sum() / lg
-    positive = df.pos.sum() / lg
+    negative = df.neg.mean()
+    neutral = df.neu.mean()
+    positive = df.pos.mean()
 
     return {
         "user_name": name,
-        "ngeative": negative,
-        "neutral": neutral,
-        "positive": positive,
+        "negative": (negative * 100).round(2),
+        "neutral": (neutral * 100).round(2),
+        "positive": (positive * 100).round(2),
     }
 
 
-# get sentimientos de todos los usuarios --> API
+# get sentimientos de todos los usuarios --> API @app.route("/get/conversations")
 @jsonErrorHandler
 def getAllConver():
     q = {}
@@ -105,104 +105,35 @@ def getAllConver():
     return dumps(query)
 
 
-# get sentimientos de todos los usuarios --> API
+# get sentimientos de todos los usuarios --> API @app.route("/get/sentiments")
 @jsonErrorHandler
 def getAllSentiment():
-    q = {}
-    query = coll_conver.find(q, projection={"_id": 0, "quote": 1})
-    if not query:
-        raise ValueError("No se han encontrado usuarios")
+    df = getMySentMatrix()
+    df_json = df.to_json(orient="records")
 
-    lst = list(query)
-    count = 0
-    df = pd.DataFrame(columns=["neg", "neu", "pos", "compound"]).T
-    for elem in lst:
-        for quote in elem.values():
-            sent = sia.polarity_scores(quote)
-            df[count] = sent.values()
-            count += 1
-    df = df.T
-    lg, cl = df.shape
-    negative = df.neg.sum() / lg
-    neutral = df.neu.sum() / lg
-    positive = df.pos.sum() / lg
-
-    return {
-        "ngeative": negative,
-        "neutral": neutral,
-        "positive": positive,
-    }
+    return df_json
 
 
-'''
-# Para insertar una quote distinta de la de los personajes de FRIENDS
-####PREGUNTAR COMO HACER ESTO.
-
-
+# get recommendation --> API @app.route("/get/recommendation/<name>")
 @jsonErrorHandler
-def insertConversation(name):
-
+def getMyReco(name):
     name = name.capitalize()
-    chk_name = checkName(name, "conversation")
+    df = getMySentMatrix()
 
-    if chk_name == "OK":
-        query = coll_conver.insert_one(
-            {
-                "user_name": name,
-                "msg_id": findIdMax("conversation") + 1,
-                "quote": "Esto es una prueba de texto",  ####PREGUNTAR COMO HACER ESTO.
-            }
+    # check name in the matrix
+    if name not in list(df.user_name):
+        raise ValueError(
+            "No se han encontrado usuario o no tiene registrada conversación"
         )
-        if not query:
-            raise ValueError("Can't insert conversation")
-        return f"Conversación añadida al usuario {name}"
-    else:
-        # raise NameError(chk_name)
-        return chk_name
 
-
-# Para insertar episodios y conversaciones de Friends.
-
-"""
-def checkEpisode():
-
-    q = {"episode_number": {"$exists": True}}
-    query = coll_conver.find(q, projection={"episode_number": 1, "_id": 0})
-    findepisode = list(set([episode for i in query for episode in i.values()]))
-    return findepisode
-"""
-
-
-@jsonErrorHandler
-def insertEpisode(chapter):
-
-    chapter = int(chapter)
-    if type(chapter) != int:  #######PREGUNTAR!
-        raise ValueError("Debes introducir un numero de episodio")
-
-    df = pd.read_csv("../input/friends_s1.csv", index_col=0)
-
-    # Check que están registrados los usuarios #######REVISAR
-    user_names = list(set(df.user_name))
-    for name in user_names:
-        if checkName(name, "conversation") != "OK":
-            return f"Se van a insertar {user_names}, pero no todos están registrados. Revisalo por favor :)"
-
-    # Check que el episodio está fuera de rango.
-    episodes = list(set(df.episode_number))
-    max_ep = max(episodes)
-    if chapter not in episodes:
-        return f"Número de episodio no encontrado en temporada 1. Solo hay {max_ep} episodios"
-
-    # Check que el episodio no está ya en la bbdd.
-    if chapter not in checkEpisode():
-        df = df[df.episode_number == chapter]
-        df_dict = df.to_dict(orient="records")
-        query = coll_conver.insert_many(df_dict)
-        if not query:
-            raise ValueError("No se puede añadir el episodio")
-        return f"Conversación del episodio {chapter} correctamente añadida"
-    else:
-        return f"El episodio {chapter} ya estaba insertado en la base de datos."
-'''
+    df = df.set_index("user_name")
+    df = df.T
+    distances = pd.DataFrame(
+        1 / (1 + squareform(pdist(df.T, "euclidean"))),
+        index=df.columns,
+        columns=df.columns,
+    )
+    similarities = distances[name].sort_values(ascending=False)[1:].reset_index()
+    similarities = similarities.to_json(orient="records")
+    return similarities
 

@@ -1,6 +1,4 @@
 from flask import Flask, request
-from tas import queryTas, tas
-from companies import getCompanyWithName
 from insertFriends import insertUser, insertConversation, insertEpisode
 from getFriends import (
     getUsers,
@@ -8,15 +6,15 @@ from getFriends import (
     getUserSentiment,
     getAllConver,
     getAllSentiment,
+    getMyReco,
 )
 import random
+
 
 app = Flask(__name__)
 
 
 ####### SALUDOS #######
-
-
 @app.route("/")
 def hello():
     hello = "Bienvenido a la API de Análisis de Sentimientos. Juega con FRIENDS y descubre su personalidad"
@@ -30,17 +28,6 @@ def controllerFn():
 app.route("/hola")(controllerFn)
 
 
-@app.route("/ta")
-def taChooser():
-    return random.choice(tas)
-
-
-@app.route("/ta/<name>")
-def taChooserWithName(name):
-    print(f"Getting TA data for {name}")
-    return queryTas(name)
-
-
 @app.route("/homer")
 def homer():
     return """
@@ -49,24 +36,11 @@ def homer():
     """
 
 
-"""
-@app.route("/company/<name>")
-def getCompany(name):
-    return getCompanyWithName(name)
-"""
-
-####### INSERT #######
-
+####### INSERT ####### insertUser, insertConversation, insertEpisode
 # Insertar usuario
 @app.route("/insert/user/<name>")
 def insertFriend(name):
     return insertUser(name)
-
-
-# Insertar converación de un único usuario
-@app.route("/insert/conver/user/<name>")
-def insertChat(name):
-    return insertConversation(name)
 
 
 # Insertar conversación de todos los usuarios de un episodio
@@ -75,8 +49,13 @@ def insertConverEpisode(episode_number):
     return insertEpisode(episode_number)
 
 
-####### GET ####### getUsers, getUserConversation, getUserSentiment, getAllConver, getAllSentiment
+# Insertar converación de un único usuario de Star Wars
+@app.route("/insert/conver/user/<name>")
+def insertChat(name):
+    return insertConversation(name)
 
+
+####### GET ####### getUsers, getUserConversation, getUserSentiment, getAllConver, getAllSentiment, getMyReco
 # Get all users registrados
 @app.route("/get/users")
 def getAllUsers():
@@ -105,6 +84,12 @@ def getConverAll():
 @app.route("/get/sentiments")
 def getSentimentAll():
     return getAllSentiment()
+
+
+# Get recommendation for a user given
+@app.route("/get/recommendation/<name>")
+def getReco(name):
+    return getMyReco(name)
 
 
 app.run("0.0.0.0", 5000, debug=True)
